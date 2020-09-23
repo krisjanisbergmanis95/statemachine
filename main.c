@@ -3,6 +3,7 @@
 #include <avr/io.h>
 #include <math.h>
 #include <stdio.h>
+#include <string.h>
 #include <avr/interrupt.h>
 #include <avr/delay.h>
 
@@ -13,6 +14,13 @@ void USARTInit();
 void USART_Transmit(char val);
 void USART_Transmit_String(char *);
 uint8_t USART_Read_Byte;
+char USARTReadBufferArr[16] = {'0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0'};
+int usart_read_index = 0;
+
+char LEVEL_ONE_PIN[5] = {'1','2','3', '\r', '\n'};
+//char *LEVEL_ONE_PIN = "123";
+char pin_to_check_level_one[5] = {}; // note 6, not 5, there's one there for the null terminator
+
 uint8_t test_int = 0;
 enum INPUT {coin, push, waiting};
 enum INPUT input_action = waiting;
@@ -31,7 +39,7 @@ int main(void){
 	sei ();
 	
 	while (1) {
-	//USART_Transmit_String("test");
+		//USART_Transmit_String("test");
 		checkInput();
 		checkState();
 	}
@@ -40,13 +48,14 @@ int main(void){
 
 void checkState() {
 	//USART_Transmit_String("check state");
+	
 	switch(next_state) {
 		
 		
 		case locked:
 		if (input_action == coin) {
 			next_state = unlocked;
-			input_action = waiting;
+	
 			
 			USART_Transmit_String("A");
 			USART_Transmit_String("current state: locked\n");
@@ -55,18 +64,18 @@ void checkState() {
 		}
 		else if (input_action == push) {
 			next_state = locked;
-			input_action = waiting;
 			
 			USART_Transmit_String("B");
 			USART_Transmit_String("current state: locked\n");
 			USART_Transmit_String("next state: locked\n");
 			USART_Transmit_String("locked - insert coin\n");
 		}
+		
 		break;
 		case unlocked:
 		if (input_action == coin) {
 			next_state = unlocked;
-			input_action = waiting;
+			
 			
 			USART_Transmit_String("C");
 			USART_Transmit_String("current state: unlocked\n");
@@ -75,33 +84,37 @@ void checkState() {
 		}
 		else if (input_action == push) {
 			next_state = locked;
-			input_action = waiting;
 			
 			USART_Transmit_String("D");
 			USART_Transmit_String("current state: unlocked\n");
 			USART_Transmit_String("next state: locked\n");
-	 		USART_Transmit_String("enjoy. locking after\n");
+			USART_Transmit_String("enjoy. locking after\n");
 		}
+		
 		break;
-	
+		
+		
 	}
+	input_action = waiting;
 
 }
 
 void checkInput() {
-	test_int = test_int ++;
-	if (USART_Read_Byte == 'c') {
+	//strncpy(pin_to_check_level_one, USARTReadBufferArr, 2);
+	//pin_to_check_level_one[3] = '\0'; // place the null terminator
+	int result = strcmp(pin_to_check_level_one, LEVEL_ONE_PIN);
+	//if (USART_Read_Byte == 'c') {
+	if (result == 0) {
 		input_action = coin;
 		
-	} else if (USART_Read_Byte == 'p') {
-		input_action = push;
+		} //else if (USARTReadBufferArr[0] == 'p') {
+		//input_action = push;
 		
-	}
+	//}
 	else {
 		input_action = waiting;
 	}
 }
-
 
 /*-------------INIT----------------*/
 void PortInit()
@@ -132,8 +145,14 @@ Init_ExternalInterupts(){
 /*-------------ISR----------------*/
 
 ISR(USART_RX_vect){
-	USART_Read_Byte = UDR0;
-	PORTB ^= (1 << PORTB5);
+//	USART_Read_Byte = UDR0;
+		pin_to_check_level_one[usart_read_index] = UDR0;
+
+
+	usart_read_index++;
+	if (usart_read_index > 4) {
+		usart_read_index = 0;
+	}
 }
 /*^^-----------ISR----------------*/
 
