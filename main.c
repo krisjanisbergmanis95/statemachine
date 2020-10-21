@@ -17,9 +17,8 @@ uint8_t USART_Read_Byte;
 char USARTReadBufferArr[16] = {'0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0'};
 int usart_read_index = 0;
 
-//char LEVEL_ONE_PIN[5] = {'1','2','3', '\r', '\n'};
 char *LEVEL_ONE_PIN = "123";
-char pin_to_check_level_one[3] = {}; // note 6, not 5, there's one there for the null terminator
+char pin_to_check_level_one[3] = {};
 
 uint8_t test_int = 0;
 enum INPUT {coin, push, waiting};
@@ -40,7 +39,6 @@ int main(void){
 	sei ();
 	
 	while (1) {
-		//USART_Transmit_String("test");
 		checkInput();
 		checkState();
 	}
@@ -48,15 +46,13 @@ int main(void){
 }
 
 void checkState() {
-	//USART_Transmit_String("check state");
-	
 	switch(next_state) {
 		
 		
 		case locked:
 		if (input_action == coin) {
 			next_state = unlocked;
-	input_action = waiting;
+			input_action = waiting;
 			
 			USART_Transmit_String("A");
 			USART_Transmit_String("current state: locked\n");
@@ -101,30 +97,21 @@ void checkState() {
 }
 
 void checkInput() {
-	//strncpy(pin_to_check_level_one, USARTReadBufferArr, 2);
-	//pin_to_check_level_one[3] = '\0'; // place the null terminator
 	int result = 11000;
 	result = strcmp(pin_to_check_level_one,LEVEL_ONE_PIN);
-	//if (pin_to_check_level_one == LEVEL_ONE_PIN) {
-	//	result = 00
-	//}
-	//if (USART_Read_Byte == 'c') {
+
 	if (result == 0) {
 		input_action = coin;
-//Variants B
-//sanjemtasis pin tiek notiiriits
-//arr index = 0;
 		pin_to_check_level_one[0] = NULL;
-pin_to_check_level_one[1] = NULL;
+		pin_to_check_level_one[1] = NULL;
 		
-		} else if (result != 0 && pin_to_check_level_one[0] != NULL && pin_to_check_level_one[1] != NULL) {
+	} else if (result != 0 && pin_to_check_level_one[0] != NULL && pin_to_check_level_one[1] != NULL) {
 		input_action = push;
 		pin_to_check_level_one[0] = NULL;
 		pin_to_check_level_one[1] = NULL;
 		}
 	else {
 		input_action = waiting;
-		//input_action = push;
 	}
 	_delay_ms(500);
 }
@@ -158,16 +145,9 @@ Init_ExternalInterupts(){
 /*-------------ISR----------------*/
 
 ISR(USART_RX_vect){
-//	USART_Read_Byte = UDR0;
-		pin_to_check_level_one[usart_read_index] = UDR0;
-
-
+	pin_to_check_level_one[usart_read_index] = UDR0;
 	usart_read_index++;
-//variants A
-//state1
-	//if index > 4
-//state2 
-//if index > 6 
+	
 	if (usart_read_index > 2) {
 		usart_read_index = 0;
 	}
