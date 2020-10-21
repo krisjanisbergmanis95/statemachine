@@ -30,6 +30,7 @@ enum STATE next_state = locked;
 void checkState();
 void checkInput();
 void echo();
+void clear_pin_to_check_level_one();
 
 int main(void){
 	USARTInit();
@@ -102,13 +103,11 @@ void checkInput() {
 
 	if (result == 0) {
 		input_action = coin;
-		pin_to_check_level_one[0] = NULL;
-		pin_to_check_level_one[1] = NULL;
+		clear_pin_to_check_level_one();
 		
 	} else if (result != 0 && pin_to_check_level_one[0] != NULL && pin_to_check_level_one[1] != NULL) {
 		input_action = push;
-		pin_to_check_level_one[0] = NULL;
-		pin_to_check_level_one[1] = NULL;
+		clear_pin_to_check_level_one();
 		}
 	else {
 		input_action = waiting;
@@ -172,4 +171,9 @@ void USART_Transmit_String(char *val) {
 void echo() {
 	USART_Transmit_String(USARTReadBufferArr);
 	USART_Transmit_String("\n");
+}
+
+void clear_pin_to_check_level_one() {
+	pin_to_check_level_one[0] = NULL;
+	pin_to_check_level_one[1] = NULL;
 }
