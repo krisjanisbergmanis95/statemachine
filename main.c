@@ -117,14 +117,16 @@ void checkInput() {
 		pin_to_check_level_one[0] = NULL;
 pin_to_check_level_one[1] = NULL;
 		
-		} else if (USARTReadBufferArr[0] == 'p') {
+		} else if (result != 0 && pin_to_check_level_one[0] != NULL && pin_to_check_level_one[1] != NULL) {
 		input_action = push;
-		
-	}
+		pin_to_check_level_one[0] = NULL;
+		pin_to_check_level_one[1] = NULL;
+		}
 	else {
 		input_action = waiting;
 		//input_action = push;
 	}
+	_delay_ms(500);
 }
 
 /*-------------INIT----------------*/
