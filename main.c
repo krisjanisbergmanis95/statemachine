@@ -16,19 +16,26 @@ void USART_Transmit_String(char *);
 uint8_t USART_Read_Byte;
 char USARTReadBufferArr[16] = {'0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0'};
 int usart_read_index = 0;
+int usart_read_index_action = 0;
 
 char *LEVEL_ONE_PIN = "123";
+char *ACTION_MOVE = "move";
 char pin_to_check_level_one[3] = {};
+char action_to_check[4] = {};
 
 uint8_t test_int = 0;
 enum INPUT {coin, push, waiting};
 enum INPUT input_action = waiting;
 
+enum ACTION {pin, move, wait};
+enum ACTION to_do = wait;
+
 enum STATE {locked, unlocked};
 enum STATE next_state = locked;
 
-void checkState();
+void checkAction();
 void checkInput();
+void checkState();
 void echo();
 void clear_pin_to_check_level_one();
 
@@ -40,6 +47,7 @@ int main(void){
 	sei ();
 	
 	while (1) {
+		checkAction();
 		checkInput();
 		checkState();
 	}
@@ -144,11 +152,17 @@ Init_ExternalInterupts(){
 /*-------------ISR----------------*/
 
 ISR(USART_RX_vect){
-	pin_to_check_level_one[usart_read_index] = UDR0;
+	char bufferChar = NULL;
+	bufferChar = UDR0;
+	pin_to_check_level_one[usart_read_index] = bufferChar;
+	action_to_check[usart_read_index_action] = bufferChar;
 	usart_read_index++;
 	
 	if (usart_read_index > 2) {
 		usart_read_index = 0;
+	}
+	if (usart_read_index_action > 3) {
+		usart_read_index_action = 0;
 	}
 }
 /*^^-----------ISR----------------*/
@@ -176,4 +190,22 @@ void echo() {
 void clear_pin_to_check_level_one() {
 	pin_to_check_level_one[0] = NULL;
 	pin_to_check_level_one[1] = NULL;
+}
+
+void checkAction() {
+	
+	int result = 11000;
+	//result = strcmp(action_to_check, ACTION_PIN);
+	result = strcmp(pin_to_check_level_one,LEVEL_ONE_PIN);
+	if (result == 0) {
+		USART_Transmit_String("WAITING FOR PIN\n");
+		to_do = pin;
+	}
+	
+	result = strcmp(action_to_check, ACTION_MOVE);
+	if (result == 0) {
+		USART_Transmit_String("WAITING FOR MOVE TODO\n");
+		to_do = move;
+	}
+	//clear_action_val();
 }
