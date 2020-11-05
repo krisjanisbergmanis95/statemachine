@@ -15,13 +15,10 @@ void USART_Transmit(char val);
 void USART_Transmit_String(char *);
 uint8_t USART_Read_Byte;
 char USARTReadBufferArr[16] = {'0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0'};
-	
+
 
 
 char *LEVEL_ONE_PIN = "123";
-//char LEVEL_ONE_PIN[3] = {'1','2','3'};
-// char *ACTION_MOVE = "move";
-// char *ACTION_PIN = "pin1";
 
 char *ACTION_MOVE = "mov";
 char *ACTION_PIN = "pin";
@@ -30,12 +27,12 @@ char *MOVE_RIGHT = "-->";
 char *MOVE_LEFT = "<--";
 
 
-int usart_read_index = 0;
-int usart_read_index_action = 0;
-int usart_read_index_move = 0;
+int pin_usart_read_index = 0;
+int action_usart_read_index = 0;
+int move_usart_read_index = 0;
 char pin_to_check_level_one[3] = {};
-char move_to_check[3] = {};
-char action_to_check[4] = {};
+char where_to_go[3] = {};
+char action_to_check[3] = {};
 
 int global_pincheck = 55;
 int global_move_check = 29;
@@ -50,7 +47,7 @@ enum ACTION to_do = wait;
 enum MOVE {forward, back, stay};
 enum MOVE go_there = stay;
 
-enum STATE {state1, state2, state3, state4, state5,state6};
+enum STATE {state1, state2, state3, state4, state5, state6};
 enum STATE next_state = state1;
 
 void checkAction();
@@ -71,8 +68,9 @@ int main(void){
 	sei ();
 	clear_pin_to_check_level_one();
 	clear_move_to_check();
+	clear_action_to_check();
 	while (1) {
-		checkAction();
+		//checkAction();
 		checkInput();
 		checkState();
 	}
@@ -91,20 +89,21 @@ void checkState() {
 			USART_Transmit_String("next state 2");
 		}
 		else {
-			next_state = state1;
+			next_state = state4;
 			input_action = waiting;
 			USART_Transmit_String("next state 4");
 		}
 		break;
 		
 		case state2:
+		to_do = pin;
 		USART_Transmit_String("current state 2");
 		if (input_action == pin_correct) {
 			next_state = state3;
 			input_action = waiting;
 			incorrect_pin_counters = 0;
 			USART_Transmit_String("next state 3");
-		
+			
 		}
 		else if (input_action == pin_incorrect) {
 			next_state = state1;
@@ -116,32 +115,36 @@ void checkState() {
 		break;
 		
 		case state3:
+		to_do = move;
 		USART_Transmit_String("current state 3");
 		if (go_there == forward) {
 			next_state = state6;
 			input_action = waiting;
+			go_there = stay;
 			USART_Transmit_String("next state 6");
 			
 		}
 		else if (go_there == back) {
-		next_state = state1;
-		input_action = waiting;
-		USART_Transmit_String("next state 1");
+			next_state = state1;
+			input_action = waiting;
+			go_there = stay;
+			USART_Transmit_String("next state 1");
 		}
 		
 		break;
 		
 		case state4:
+		to_do = pin;
+		incorrect_pin_counters = 0;
 		USART_Transmit_String("current state 4");
 		if (input_action == pin_correct) {
 			next_state = state1;
 			input_action = waiting;
-			incorrect_pin_counters = 0;
 			USART_Transmit_String("next state 1");
 			
 		}
 		else if (input_action == pin_incorrect) {
-			next_state = state4;
+			next_state = state5;
 			input_action = waiting;
 			USART_Transmit_String("next state 5");
 			
@@ -150,26 +153,28 @@ void checkState() {
 		
 		
 		case state5:
+		to_do = wait;
 		USART_Transmit_String("current state 5");
 		
-			next_state = state5;
-			input_action = waiting;
-			USART_Transmit_String("ALARM! LED0");
-			
+		next_state = state5;
+		input_action = waiting;
+		USART_Transmit_String("ALARM! LED0");
+		
 		break;
 		
 		case state6:
+		to_do = pin;
 		USART_Transmit_String("current state 6");
-		if (go_there == forward) {
+		if (pin == pin_correct) {
 			next_state = state6;
 			input_action = waiting;
 			USART_Transmit_String("next state 7; TODO");
 			
 		}
-		else if (go_there == back) {
-			next_state = state3;
+		else if (pin == pin_correct) {
+			next_state = state6;
 			input_action = waiting;
-			USART_Transmit_String("next state 3");
+			USART_Transmit_String("next state 9; TO DO");
 		}
 		
 		break;
@@ -188,28 +193,32 @@ void checkAction() {
 	if (testr == 0 && to_do != pin) {
 		USART_Transmit_String("WAITING FOR PIN\n");
 		clear_pin_to_check_level_one();
-		usart_read_index = 0;
-		usart_read_index_move = 0;
-		usart_read_index_action = 0;
+		clear_move_to_check();
+		
+		pin_usart_read_index = 0;
+		move_usart_read_index = 0;
+		action_usart_read_index = 0;
 		to_do = pin;
 	}
 	
 	testr = strcmp(action_to_check, ACTION_MOVE);
 	if (testr == 0 && to_do != move) {
 		USART_Transmit_String("WAITING FOR MOVE TODO\n");
-		usart_read_index = 0;
-		usart_read_index_move = 0;
-		usart_read_index_action = 0;
-		to_do = move;
 		clear_action_to_check();
-		clear_move_to_check();
+		
+		pin_usart_read_index = 0;
+		move_usart_read_index = 0;
+		action_usart_read_index = 0;
+		to_do = move;
+		
 	}
 	clear_action_to_check();
 	//clear_move_to_check();
 	
-	usart_read_index = 0;
-	usart_read_index_move = 0;
-	usart_read_index_action = 0;
+	
+	pin_usart_read_index = 0;
+	move_usart_read_index = 0;
+	action_usart_read_index = 0;
 }
 
 void checkInput() {
@@ -219,65 +228,68 @@ void checkInput() {
 	switch(to_do) {
 		case pin:
 		
-			
+		
 		USART_Transmit_String("PIN : ");
 		USART_Transmit_String(pin_to_check_level_one);
 		USART_Transmit_String("\n");
 
-			if (global_pincheck == 0) {
-				input_action = pin_correct;
-				clear_pin_to_check_level_one();
-				usart_read_index_action = 0;
-				
-				} else if (global_pincheck != 0 && pin_to_check_level_one[0] != NULL && pin_to_check_level_one[1] != NULL) {
-				input_action = pin_incorrect;
-				clear_pin_to_check_level_one();
-				usart_read_index_action = 0;
-			}
-			else {
-				input_action = waiting;
-			}
-			
-			break;
-		
-		case move: 
-			
-			global_move_check = strcmp(move_to_check, MOVE_RIGHT);
-			USART_Transmit_String("MOVE : ");
-			USART_Transmit_String(move_to_check);
-			USART_Transmit_String("\n");
-			if (global_move_check == 0 && go_there != forward) {
-				USART_Transmit_String("MOVING FORWARD\n");
-				clear_move_to_check();
-				clear_action_to_check();
-				usart_read_index = 0;
-				usart_read_index_move = 0;
-				usart_read_index_action = 0;
-				go_there = forward;
-			}
-			
-			global_move_check = strcmp(move_to_check, MOVE_LEFT);
-			if (global_move_check == 0 && go_there != back) {
-				USART_Transmit_String("GOING BACK\n");
-				usart_read_index = 0;
-				usart_read_index_action = 0;
-				usart_read_index_move = 0;
-				go_there = back;
-			}
-			usart_read_index_move = 0;
-			usart_read_index = 0;
-			usart_read_index_action = 0;
+		if (global_pincheck == 0) {
+			input_action = pin_correct;
+			clear_pin_to_check_level_one();
 			clear_move_to_check();
-			clear_action_to_check();
+			action_usart_read_index = 0;
+			
+			} else if (global_pincheck != 0 && pin_to_check_level_one[0] != NULL && pin_to_check_level_one[1] != NULL) {
+			input_action = pin_incorrect;
+			clear_pin_to_check_level_one();
+			clear_move_to_check();
+			action_usart_read_index = 0;
+		}
+		else {
+			input_action = waiting;
+		}
+		
+		break;
+		
+		case move:
+		USART_Transmit_String("MOVE : ");
+		USART_Transmit_String(pin_to_check_level_one);
+		USART_Transmit_String("\n");
+		global_move_check = strcmp(pin_to_check_level_one, MOVE_RIGHT);
+		
+		
+		if (global_move_check == 0 && go_there != forward) {
+			USART_Transmit_String("MOVING FORWARD\n");
+			clear_move_to_check();
+			pin_usart_read_index = 0;
+			move_usart_read_index = 0;
+			action_usart_read_index = 0;
+			go_there = forward;
+		} 
+		
+		global_move_check = strcmp(pin_to_check_level_one, MOVE_LEFT);
+		if (global_move_check == 0 && go_there != back) {
+			USART_Transmit_String("GOING BACK\n");
+			pin_usart_read_index = 0;
+			action_usart_read_index = 0;
+			move_usart_read_index = 0;
+			go_there = back;
+		}
+		move_usart_read_index = 0;
+		pin_usart_read_index = 0;
+		action_usart_read_index = 0;
+ 		clear_move_to_check();
+// 		clear_action_to_check();
+ 		clear_pin_to_check_level_one();
 		
 		break;
 		default:
 		clear_move_to_check();
 		clear_action_to_check();
 		clear_pin_to_check_level_one();
-		usart_read_index_action = 0;
-		usart_read_index = 0;
-		usart_read_index_move = 0;
+		action_usart_read_index = 0;
+		pin_usart_read_index = 0;
+		move_usart_read_index = 0;
 	}
 
 	
@@ -314,25 +326,30 @@ ISR(USART_RX_vect){
 	bufferChar = UDR0;
 	
 	
-	action_to_check[usart_read_index_action] = bufferChar;
-	usart_read_index_action++;
-	if (usart_read_index_action > 2) {
-		usart_read_index_action = 0;
-	}
+// 	action_to_check[action_usart_read_index] = bufferChar;
+// 	action_usart_read_index++;
+// 	if (action_usart_read_index > 2) {
+// 		action_usart_read_index = 0;
+// 	}
 	
 	if (to_do == move) {
-		move_to_check[usart_read_index_move] = bufferChar;
-		usart_read_index_move++;
-		if (usart_read_index_move > 2) {
-			usart_read_index_move = 0;
-			usart_read_index_action = 0;
+		pin_to_check_level_one[move_usart_read_index] = bufferChar;
+		move_usart_read_index++;
+		//action_usart_read_index = 0;
+		pin_usart_read_index = 0;
+		if (move_usart_read_index > 2) {
+			move_usart_read_index = 0;
+			
 		}
 	}
-	if (to_do == pin) {
-		pin_to_check_level_one[usart_read_index] = bufferChar;
-		usart_read_index++;
-		if (usart_read_index > 2) {
-			usart_read_index = 0;
+	else if (to_do == pin) {
+		pin_to_check_level_one[pin_usart_read_index] = bufferChar;
+		pin_usart_read_index++;
+		move_usart_read_index = 0;
+		//action_usart_read_index = 0;
+		if (pin_usart_read_index > 2) {
+			pin_usart_read_index = 0;
+			
 		}
 		
 	}
@@ -371,6 +388,7 @@ void clear_action_to_check() {
 
 void clear_move_to_check() {
 	
-	move_to_check[0] = NULL;
+	where_to_go[0] = NULL;
+	where_to_go[1] = NULL;
 }
 
