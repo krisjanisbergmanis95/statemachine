@@ -160,6 +160,7 @@ void checkState() {
 		
 		next_state = state5;
 		input_action = waiting;
+		PORTB ^= (1<<  PORTB0);
 		USART_Transmit_String("ALARM! LED0");
 		break;
 		
@@ -240,6 +241,7 @@ void checkState() {
 		
 		next_state = state10;
 		input_action = waiting;
+		PORTB ^= (1<<  PORTB1);
 		USART_Transmit_String("ALARM! LEDBP1");
 		break;
 	
@@ -284,6 +286,7 @@ void checkState() {
 		next_state = state13;
 		USART_Transmit_String("Safe Unlocked! PB4");
 		input_action = waiting;
+		PORTB = (1<<  PORTB3);
 		break;	
 		
 	case state14:
@@ -292,6 +295,10 @@ void checkState() {
 		
 		next_state = state14;
 		input_action = waiting;
+		PORTB ^= (1<<  PORTB0);
+		PORTB ^= (1<<  PORTB1);
+		PORTB ^= (1<<  PORTB2);
+		PORTB ^= (1<<  PORTB3);
 		USART_Transmit_String("ALARM! LEDBP0-4");
 		break;
 	}
@@ -377,7 +384,7 @@ void PortInit()
 {
 	DDRD = 0b00000000;
 	PORTD = 0b00001100;
-	DDRB = 0b00100000;
+	DDRB = 0b00111111;
 	PORTB = 0b00000000;
 }
 
